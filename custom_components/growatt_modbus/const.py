@@ -41,6 +41,7 @@ DOMAIN = "growatt_modbus"
 # Configuration Constants
 CONF_SLAVE_ID = "slave_id"
 CONF_CONNECTION_TYPE = "connection_type"
+CONF_TCP_PROTOCOL = "tcp_protocol"
 CONF_DEVICE_PATH = "device_path"
 CONF_BAUDRATE = "baudrate"
 CONF_REGISTER_MAP = "register_map"
@@ -53,6 +54,7 @@ CONF_DEVICE_STRUCTURE_VERSION = "device_structure_version"
 DEFAULT_PORT = 502
 DEFAULT_SLAVE_ID = 1
 DEFAULT_BAUDRATE = 9600
+DEFAULT_TCP_PROTOCOL = "tcp"
 
 # Device Structure Version
 # Version 1: Single device (legacy)
@@ -994,5 +996,4 @@ if __name__ == "__main__":
         print(f"  LOW word: {example_low}")
         print(f"  Combined: {combined}")
         print(f"  Scaled: {scaled}W")
-
 

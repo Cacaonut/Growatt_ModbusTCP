@@ -17,11 +17,13 @@ from .const import (
     CONF_SLAVE_ID,
     CONF_REGISTER_MAP,
     CONF_CONNECTION_TYPE,
+    CONF_TCP_PROTOCOL,
     CONF_DEVICE_PATH,
     CONF_BAUDRATE,
     CONF_INVERT_BATTERY_POWER,
     CONF_DEVICE_STRUCTURE_VERSION,
     CURRENT_DEVICE_STRUCTURE_VERSION,
+    DEFAULT_TCP_PROTOCOL,
     get_sensor_type,
     SENSOR_OFFLINE_BEHAVIOR,
     DEVICE_TYPE_INVERTER,
@@ -57,6 +59,7 @@ def test_connection(config: dict) -> dict:
                 host=config[CONF_HOST],
                 port=config[CONF_PORT],
                 slave_id=config[CONF_SLAVE_ID],
+                tcp_protocol=config.get(CONF_TCP_PROTOCOL, DEFAULT_TCP_PROTOCOL),
                 register_map=register_map,
                 timeout=config.get("timeout", 10)
             )
@@ -348,6 +351,7 @@ class GrowattModbusCoordinator(DataUpdateCoordinator[GrowattData]):
                     host=self.config[CONF_HOST],
                     port=self.config[CONF_PORT],
                     slave_id=self.config[CONF_SLAVE_ID],
+                    tcp_protocol=self.config.get(CONF_TCP_PROTOCOL, DEFAULT_TCP_PROTOCOL),
                     register_map=register_map,
                     timeout=timeout,
                     invert_battery_power=invert_battery_power
