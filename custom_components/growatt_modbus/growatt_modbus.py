@@ -23,7 +23,12 @@ from typing import Dict, Any, Optional, Tuple, Union
 from homeassistant.config_entries import ConfigEntry
 
 # Import register definitions
-from .const import STATUS_CODES, combine_registers, REGISTER_MAPS
+from .const import (
+    STATUS_CODES,
+    combine_registers,
+    REGISTER_MAPS,
+    TCP_PROTOCOL_RTU_OVER_TCP,
+)
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -53,6 +58,21 @@ try:
     TCP_AVAILABLE = True
 except ImportError:
     TCP_AVAILABLE = False
+
+try:
+    # pymodbus 3.x (preferred): enum-based framer selection
+    from pymodbus import FramerType
+except ImportError:
+    try:
+        from pymodbus.framer import FramerType
+    except ImportError:
+        FramerType = None
+
+try:
+    # pymodbus 2.x fallback for RTU-over-TCP framing
+    from pymodbus.transaction import ModbusRtuFramer
+except ImportError:
+    ModbusRtuFramer = None
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -364,8 +384,9 @@ class GrowattModbus:
     """Growatt MIN series Modbus client"""
     
     def __init__(self, connection_type='tcp', host='192.168.1.100', port=502,
-             device='/dev/ttyUSB0', baudrate=9600, slave_id=1,
-             register_map='MIN_7000_10000TL_X', timeout=10, invert_battery_power=False):
+              device='/dev/ttyUSB0', baudrate=9600, slave_id=1,
+              register_map='MIN_7000_10000TL_X', timeout=10, invert_battery_power=False,
+              tcp_protocol='tcp'):
         """
         Initialize Modbus connection
 
@@ -379,8 +400,10 @@ class GrowattModbus:
             register_map: Which register mapping to use (see const.py)
             timeout: Connection timeout in seconds (default: 10)
             invert_battery_power: Invert battery power sign for inverters with opposite convention (default: False)
+            tcp_protocol: 'tcp' (Modbus TCP/MBAP) or 'rtu_over_tcp' (Modbus RTU frames over TCP socket)
         """
         self.connection_type = connection_type
+        self.tcp_protocol = tcp_protocol
         self.slave_id = slave_id
         self.client: Optional[Union['ModbusTcpClient', 'ModbusSerialClient']] = None
         self.last_read_time = 0
@@ -458,19 +481,40 @@ class GrowattModbus:
         if connection_type == 'tcp':
             if not TCP_AVAILABLE:
                 raise ImportError("pymodbus not available for TCP connection")
-            
+
+            use_rtu_over_tcp = tcp_protocol == TCP_PROTOCOL_RTU_OVER_TCP
+            framer_arg = None
+            if use_rtu_over_tcp:
+                if FramerType is not None:
+                    framer_arg = FramerType.RTU
+                elif ModbusRtuFramer is not None:
+                    framer_arg = ModbusRtuFramer
+                else:
+                    raise ImportError(
+                        "RTU-over-TCP requested but no compatible pymodbus RTU framer is available"
+                    )
+
             # Handle different pymodbus versions for TCP client
             try:
                 # New style (pymodbus 3.x+) - supports timeout parameter
-                self.client = ModbusTcpClient(host=host, port=port, timeout=self._timeout)
+                client_kwargs = {"host": host, "port": port, "timeout": self._timeout}
+                if framer_arg is not None:
+                    client_kwargs["framer"] = framer_arg
+                self.client = ModbusTcpClient(**client_kwargs)
             except TypeError:
                 # Old style (pymodbus 2.x) - timeout must be set after creation
-                self.client = ModbusTcpClient(host, port)
+                if framer_arg is not None:
+                    self.client = ModbusTcpClient(host, port, framer=framer_arg)
+                else:
+                    self.client = ModbusTcpClient(host, port)
                 # Set timeout on the client object if supported
                 if hasattr(self.client, 'timeout'):
                     self.client.timeout = self._timeout
-            
-            logger.info(f"Connecting to Growatt via TCP: {host}:{port} (timeout: {self._timeout}s)")
+
+            protocol_desc = "RTU-over-TCP" if use_rtu_over_tcp else "Modbus TCP"
+            logger.info(
+                f"Connecting to Growatt via TCP: {host}:{port} ({protocol_desc}, timeout: {self._timeout}s)"
+            )
             
         elif connection_type == 'serial':
             if not SERIAL_AVAILABLE:

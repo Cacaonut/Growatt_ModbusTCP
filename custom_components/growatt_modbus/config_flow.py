@@ -18,12 +18,16 @@ from .const import (
     CONF_SLAVE_ID,
     CONF_REGISTER_MAP,
     CONF_CONNECTION_TYPE,
+    CONF_TCP_PROTOCOL,
     CONF_DEVICE_PATH,
     CONF_BAUDRATE,
     CONF_INVERT_BATTERY_POWER,
     DEFAULT_PORT,
     DEFAULT_SLAVE_ID,
     DEFAULT_BAUDRATE,
+    DEFAULT_TCP_PROTOCOL,
+    TCP_PROTOCOL_MODBUS_TCP,
+    TCP_PROTOCOL_RTU_OVER_TCP,
     DOMAIN,
 )
 from .device_profiles import (
@@ -159,6 +163,7 @@ class GrowattModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN): # type:
                     host=user_input[CONF_HOST],
                     port=user_input[CONF_PORT],
                     slave_id=user_input.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID),
+                    tcp_protocol=user_input.get(CONF_TCP_PROTOCOL, DEFAULT_TCP_PROTOCOL),
                     register_map="MIN_7000_10000TL_X"  # Temporary for connection
                 )
 
@@ -177,6 +182,7 @@ class GrowattModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN): # type:
                         CONF_HOST: user_input[CONF_HOST],
                         CONF_PORT: user_input[CONF_PORT],
                         CONF_SLAVE_ID: user_input[CONF_SLAVE_ID],
+                        CONF_TCP_PROTOCOL: user_input.get(CONF_TCP_PROTOCOL, DEFAULT_TCP_PROTOCOL),
                     })
 
                     # CRITICAL: Check if user has OffGrid inverter BEFORE autodetection
@@ -191,6 +197,10 @@ class GrowattModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN): # type:
         schema = vol.Schema({
             vol.Required(CONF_HOST): str,
             vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
+            vol.Required(CONF_TCP_PROTOCOL, default=DEFAULT_TCP_PROTOCOL): vol.In({
+                TCP_PROTOCOL_MODBUS_TCP: "Modbus TCP",
+                TCP_PROTOCOL_RTU_OVER_TCP: "Modbus RTU over TCP",
+            }),
             vol.Required(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): int,
         })
 
@@ -368,6 +378,7 @@ class GrowattModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN): # type:
                             host=self._discovered_data[CONF_HOST],
                             port=self._discovered_data[CONF_PORT],
                             slave_id=self._discovered_data[CONF_SLAVE_ID],
+                            tcp_protocol=self._discovered_data.get(CONF_TCP_PROTOCOL, DEFAULT_TCP_PROTOCOL),
                             register_map="MIN_7000_10000TL_X"  # Temporary for connection
                         )
                     else:  # serial
@@ -475,6 +486,7 @@ class GrowattModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN): # type:
                 if connection_type == "tcp":
                     config_data[CONF_HOST] = self._discovered_data[CONF_HOST]
                     config_data[CONF_PORT] = self._discovered_data[CONF_PORT]
+                    config_data[CONF_TCP_PROTOCOL] = self._discovered_data.get(CONF_TCP_PROTOCOL, DEFAULT_TCP_PROTOCOL)
                     unique_id = f"{config_data[CONF_HOST]}:{config_data[CONF_PORT]}_{config_data[CONF_SLAVE_ID]}"
                 else:  # serial
                     config_data[CONF_DEVICE_PATH] = self._discovered_data[CONF_DEVICE_PATH]
@@ -499,6 +511,7 @@ class GrowattModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN): # type:
                             host=config_data[CONF_HOST],
                             port=config_data[CONF_PORT],
                             slave_id=config_data[CONF_SLAVE_ID],
+                            tcp_protocol=config_data.get(CONF_TCP_PROTOCOL, DEFAULT_TCP_PROTOCOL),
                             register_map=config_data[CONF_REGISTER_MAP]
                         )
                     else:  # serial
@@ -660,6 +673,7 @@ class GrowattModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN): # type:
                     if connection_type == "tcp":
                         config_data[CONF_HOST] = self._discovered_data[CONF_HOST]
                         config_data[CONF_PORT] = self._discovered_data[CONF_PORT]
+                        config_data[CONF_TCP_PROTOCOL] = self._discovered_data.get(CONF_TCP_PROTOCOL, DEFAULT_TCP_PROTOCOL)
                         unique_id = f"{config_data[CONF_HOST]}:{config_data[CONF_PORT]}_{config_data[CONF_SLAVE_ID]}"
                     else:  # serial
                         config_data[CONF_DEVICE_PATH] = self._discovered_data[CONF_DEVICE_PATH]
@@ -682,6 +696,7 @@ class GrowattModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN): # type:
                                 host=config_data[CONF_HOST],
                                 port=config_data[CONF_PORT],
                                 slave_id=config_data[CONF_SLAVE_ID],
+                                tcp_protocol=config_data.get(CONF_TCP_PROTOCOL, DEFAULT_TCP_PROTOCOL),
                                 register_map=config_data["register_map"]
                             )
                         else:  # serial
