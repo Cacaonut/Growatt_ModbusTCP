@@ -1120,10 +1120,23 @@ async def async_setup_entry(
             if new_entities:
                 async_add_entities(new_entities)
             if not deferred:
-                _remove_listener()
+                _safe_remove_listener()
 
         _remove_listener = coordinator.async_add_listener(_async_check_deferred_sensors)
-        config_entry.async_on_unload(_remove_listener)
+        _listener_removed = False
+
+        @callback
+        def _safe_remove_listener() -> None:
+            nonlocal _listener_removed
+            if _listener_removed:
+                return
+            _listener_removed = True
+            try:
+                _remove_listener()
+            except KeyError:
+                _LOGGER.debug("Deferred sensor listener already removed for entry %s", config_entry.entry_id)
+
+        config_entry.async_on_unload(_safe_remove_listener)
 
 
 class GrowattModbusSensor(CoordinatorEntity, SensorEntity):

@@ -177,10 +177,23 @@ async def async_setup_entry(
             if new_entities:
                 async_add_entities(new_entities)
             if not deferred_vpp:
-                _remove_vpp_listener()
+                _safe_remove_vpp_listener()
 
         _remove_vpp_listener = coordinator.async_add_listener(_async_check_deferred_vpp)
-        config_entry.async_on_unload(_remove_vpp_listener)
+        _vpp_listener_removed = False
+
+        @callback
+        def _safe_remove_vpp_listener() -> None:
+            nonlocal _vpp_listener_removed
+            if _vpp_listener_removed:
+                return
+            _vpp_listener_removed = True
+            try:
+                _remove_vpp_listener()
+            except KeyError:
+                _LOGGER.debug("Deferred VPP select listener already removed for entry %s", config_entry.entry_id)
+
+        config_entry.async_on_unload(_safe_remove_vpp_listener)
 
 
 class GrowattGenericSelect(CoordinatorEntity, SelectEntity):
