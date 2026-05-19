@@ -191,7 +191,7 @@ async def async_setup_entry(
             try:
                 _remove_vpp_listener()
             except KeyError:
-                pass
+                _LOGGER.debug("Deferred VPP select listener already removed for entry %s", config_entry.entry_id)
 
         config_entry.async_on_unload(_safe_remove_vpp_listener)
 
