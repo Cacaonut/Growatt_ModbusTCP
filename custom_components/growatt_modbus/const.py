@@ -55,6 +55,8 @@ DEFAULT_PORT = 502
 DEFAULT_SLAVE_ID = 1
 DEFAULT_BAUDRATE = 9600
 DEFAULT_TCP_PROTOCOL = "tcp"
+TCP_PROTOCOL_MODBUS_TCP = "tcp"
+TCP_PROTOCOL_RTU_OVER_TCP = "rtu_over_tcp"
 
 # Device Structure Version
 # Version 1: Single device (legacy)
@@ -996,4 +998,3 @@ if __name__ == "__main__":
         print(f"  LOW word: {example_low}")
         print(f"  Combined: {combined}")
         print(f"  Scaled: {scaled}W")
-

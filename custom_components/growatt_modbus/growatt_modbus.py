@@ -23,7 +23,12 @@ from typing import Dict, Any, Optional, Tuple, Union
 from homeassistant.config_entries import ConfigEntry
 
 # Import register definitions
-from .const import STATUS_CODES, combine_registers, REGISTER_MAPS
+from .const import (
+    STATUS_CODES,
+    combine_registers,
+    REGISTER_MAPS,
+    TCP_PROTOCOL_RTU_OVER_TCP,
+)
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -477,7 +482,7 @@ class GrowattModbus:
             if not TCP_AVAILABLE:
                 raise ImportError("pymodbus not available for TCP connection")
 
-            use_rtu_over_tcp = tcp_protocol == 'rtu_over_tcp'
+            use_rtu_over_tcp = tcp_protocol == TCP_PROTOCOL_RTU_OVER_TCP
             framer_arg = None
             if use_rtu_over_tcp:
                 if FramerType is not None:

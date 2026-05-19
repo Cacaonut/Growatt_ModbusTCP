@@ -26,6 +26,8 @@ from .const import (
     DEFAULT_SLAVE_ID,
     DEFAULT_BAUDRATE,
     DEFAULT_TCP_PROTOCOL,
+    TCP_PROTOCOL_MODBUS_TCP,
+    TCP_PROTOCOL_RTU_OVER_TCP,
     DOMAIN,
 )
 from .device_profiles import (
@@ -196,8 +198,8 @@ class GrowattModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN): # type:
             vol.Required(CONF_HOST): str,
             vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
             vol.Required(CONF_TCP_PROTOCOL, default=DEFAULT_TCP_PROTOCOL): vol.In({
-                "tcp": "Modbus TCP",
-                "rtu_over_tcp": "Modbus RTU over TCP",
+                TCP_PROTOCOL_MODBUS_TCP: "Modbus TCP",
+                TCP_PROTOCOL_RTU_OVER_TCP: "Modbus RTU over TCP",
             }),
             vol.Required(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): int,
         })
